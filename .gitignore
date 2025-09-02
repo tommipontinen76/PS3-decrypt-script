@@ -1,0 +1,6 @@
+
+decrypt_log.txt
+*.log
+ps3dec_log.txt
+ps3dec-linux
+*.backup
