@@ -3,7 +3,7 @@
 
 Get decryption keys here https://ps3.aldostools.org/dkey.html
 
-I made a eboot.bin decryption script as well since most of my ISOs din't work on RPCS3.
+I made a eboot.bin decryption script as well since most of my ISOs didn't work on RPCS3.
 
 Install ps3dec-git from AUR or https://github.com/al3xtjames/PS3Dec
 
@@ -15,12 +15,20 @@ PS3De github https://github.com/al3xtjames/PS3Dec
 
 PS3Dec binary https://www.romhacking.net/utilities/1456/
 
-You have to manually change the paths for isos and ps3dec.
-
 Made with AI for my personal use but wanted to put it public
 
 This repo contains following 3rd party binaries:
 PS3sce https://github.com/BitEdits/ps3sce
+
+There's likely some stuff that hasn't been configured universally and you need to edit the script.
+
+# Windows setup
+
+Install pipx https://pipx.pypa.io/latest/installation/
+
+Install tqdm using pipx
+
+pipx install tqdm
 
 # Planned features
 Splitting isos for FAT32 HDDs
