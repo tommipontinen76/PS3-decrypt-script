@@ -24,7 +24,7 @@ There's likely some stuff that hasn't been configured universally and you need t
 
 # Windows setup
 
-Install pipx https://pipx.pypa.io/latest/installation/
+Install pipx https://pipx.pypa.io/latest/installation/ (if you get warnings follow the installation steps)
 
 Install tqdm using pipx
 
