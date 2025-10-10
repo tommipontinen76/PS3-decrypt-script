@@ -1,6 +1,5 @@
 # Python script that automatically decrypts ps3 isos using ps3dec
 
-Now I also made an exe for the windows script.
 
 Get decryption keys here https://ps3.aldostools.org/dkey.html
 
