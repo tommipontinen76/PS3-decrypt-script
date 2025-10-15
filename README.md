@@ -7,6 +7,8 @@ I made a eboot.bin decryption script as well since most of my ISOs didn't work o
 
 Install ps3dec-git from AUR or https://github.com/al3xtjames/PS3Dec
 
+The new fork made with Rust uses different syntax and isn't supported.
+
 AUR version puts the binary to /usr/bin and the script expects that PS3Dec (notice capitalization) in located there.
 
 PS3dec.exe is included in the repo since it hasn't been updated in 7 years.
