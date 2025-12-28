@@ -6,7 +6,7 @@ from pathlib import Path
 import threading
 
 iso_base_directory = r"C:\Users\tommi\Downloads"
-output_directory = r"F:\emu\ps3"
+output_directory = r"D:\emu\ps3"
 
 def log_message(message, log_file_path):
     timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
