@@ -24,6 +24,7 @@ PS3sce https://github.com/BitEdits/ps3sce
 
 There's likely some stuff that hasn't been configured universally and you need to edit the script.
 
+Ability to split ISOs for FAT32 HDDs is not an option. (use `--split` / `-s` flag)
 # Windows setup
 
 Install pipx https://pipx.pypa.io/latest/installation/ (if you get warnings follow the installation steps)
@@ -43,6 +44,3 @@ python3 ps3dec-linux.py --help
 ```bash
 python ps3dec-windows.py --help
 ```
-
-# Planned features
-Splitting isos for FAT32 HDDs ✅ (use `--split` / `-s` flag)
