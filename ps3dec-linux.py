@@ -60,6 +60,7 @@ class PS3IsoDecrypter:
         self.output_dir = str(Path.home() / "Decrypted_PS3_ISOs")
         self.iso_files = []
         self.verbose = False
+        self.split_size = 4 * 1024 * 1024 * 1024  # 4GB for FAT32 compatibility
 
         self.script_dir = Path(__file__).resolve().parent
         self.ps3dec_path = self.script_dir / "ps3dec"
@@ -293,6 +294,47 @@ class PS3IsoDecrypter:
             logging.exception("Exception details:")
             return False
 
+    def split_iso(self, input_iso, base_output_path):
+        """Split a file into 4GB chunks for FAT32 compatibility"""
+        if not os.path.exists(input_iso):
+            self.log(f"Input file '{input_iso}' not found.", "error")
+            return False
+
+        file_size = os.path.getsize(input_iso)
+        if file_size <= self.split_size:
+            # No need to split - file is under 4GB
+            return True
+
+        self.log(f"Splitting {os.path.basename(input_iso)} ({file_size / (1024*1024):.2f} MB) into 4GB chunks...", "info")
+
+        try:
+            progress = ProgressBar(file_size, prefix=f'Splitting {os.path.basename(input_iso)}:')
+            chunk_size = self.split_size
+            chunk_index = 1
+            bytes_written = 0
+
+            with open(input_iso, 'rb') as infile:
+                while True:
+                    chunk = infile.read(chunk_size)
+                    if not chunk:
+                        break
+
+                    output_path = f"{base_output_path}.part{chunk_index:02d}"
+                    with open(output_path, 'wb') as outfile:
+                        outfile.write(chunk)
+
+                    bytes_written += len(chunk)
+                    progress.update(bytes_written)
+                    chunk_index += 1
+
+            self.log(f"Split into {chunk_index - 1} parts of max 4GB each.", "info")
+            return True
+
+        except Exception as e:
+            self.log(f"Error splitting file: {str(e)}", "error")
+            logging.exception("Exception details:")
+            return False
+
     def process_all_files(self):
         """Process all found ISO and key pairs"""
         if not self.verify_dependencies():
@@ -315,6 +357,17 @@ class PS3IsoDecrypter:
             if self.decrypt_iso(iso_path, key_path, output_path):
                 if self.verify_output(output_path):
                     successful += 1
+                    # Split if requested and file is larger than 4GB
+                    if self.split_size and os.path.getsize(output_path) > self.split_size:
+                        base_output = output_path
+                        # Rename original to part01 before splitting
+                        temp_path = output_path + ".tmp"
+                        os.rename(output_path, temp_path)
+                        if self.split_iso(temp_path, output_path):
+                            os.remove(temp_path)
+                        else:
+                            # Restore if split failed
+                            os.rename(temp_path, output_path)
                 else:
                     failed += 1
             else:
@@ -335,6 +388,7 @@ def main():
     parser.add_argument("-d", "--directory", help="Custom directory to search for ISOs (default: ~/Downloads)")
     parser.add_argument("-o", "--output", help="Output directory for decrypted ISOs (default: ~/Decrypted_PS3_ISOs)")
     parser.add_argument("-v", "--verbose", action="store_true", help="Show verbose output")
+    parser.add_argument("--split", action="store_true", help="Split output into 4GB chunks for FAT32 HDDs")
     args = parser.parse_args()
 
     decrypter = PS3IsoDecrypter()
@@ -343,6 +397,10 @@ def main():
         decrypter.downloads_dir = os.path.expanduser(args.directory)
     if args.output:
         decrypter.output_dir = os.path.expanduser(args.output)
+    if args.split:
+        decrypter.split_size = 4 * 1024 * 1024 * 1024  # 4GB
+    else:
+        decrypter.split_size = 0  # Disable splitting by default
 
     decrypter.verbose = args.verbose
 

@@ -32,5 +32,17 @@ Install tqdm using pipx
 
 pipx install tqdm
 
+# Usage
+
+## Linux
+```bash
+python3 ps3dec-linux.py --help
+```
+
+## Windows
+```bash
+python ps3dec-windows.py --help
+```
+
 # Planned features
-Splitting isos for FAT32 HDDs
+Splitting isos for FAT32 HDDs ✅ (use `--split` / `-s` flag)

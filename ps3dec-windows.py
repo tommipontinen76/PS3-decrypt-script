@@ -4,9 +4,11 @@ from datetime import datetime
 from pathlib import Path
 # from tqdm import tqdm  # Removed tqdm import
 import threading
+import argparse
 
 iso_base_directory = r"C:\Users\tommi\Downloads"
 output_directory = r"D:\emu\ps3"
+split_size = 4 * 1024 * 1024 * 1024  # 4GB for FAT32 compatibility (0 = disabled)
 
 def log_message(message, log_file_path):
     timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
@@ -20,6 +22,52 @@ def stream_reader(pipe, log_file):
         print(line, end='')      # Print to console
         log_file.write(line)     # Write to log file
     pipe.close()
+
+def split_iso(input_path, output_base, log_file):
+    """
+    Split a file into 4GB chunks for FAT32 compatibility.
+    Returns list of split part paths.
+    """
+    if not os.path.exists(input_path):
+        log_message(f"Input file '{input_path}' not found.", log_file)
+        return None
+
+    file_size = os.path.getsize(input_path)
+    if file_size <= split_size:
+        # No need to split
+        return [input_path]
+
+    log_message(f"Splitting {os.path.basename(input_path)} ({file_size / (1024*1024):.2f} MB) into 4GB chunks...", log_file)
+
+    try:
+        chunk_size = split_size
+        chunk_index = 1
+        bytes_written = 0
+        parts = []
+
+        with open(input_path, 'rb') as infile:
+            while True:
+                chunk = infile.read(chunk_size)
+                if not chunk:
+                    break
+
+                output_path = f"{output_base}.part{chunk_index:02d}"
+                with open(output_path, 'wb') as outfile:
+                    outfile.write(chunk)
+
+                parts.append(output_path)
+                bytes_written += len(chunk)
+                percent = (bytes_written / file_size) * 100
+                print(f"\rSplit progress: {bytes_written / (1024*1024):.1f}/{file_size / (1024*1024):.1f} MB ({percent:.1f}%)", end='', flush=True)
+                chunk_index += 1
+
+        print()  # New line after progress
+        log_message(f"Split into {chunk_index - 1} parts of max 4GB each.", log_file)
+        return parts
+
+    except Exception as e:
+        log_message(f"Error splitting file: {e}", log_file)
+        return None
 
 def run_tqdm_exe(total):
     """
@@ -43,6 +91,17 @@ def run_tqdm_exe(total):
         return None
 
 def main():
+    import sys
+    parser = argparse.ArgumentParser(description="Decrypt PS3 ISO files")
+    parser.add_argument("-s", "--split", action="store_true", help="Split output into 4GB chunks for FAT32 HDDs")
+    args = parser.parse_args()
+
+    global split_size
+    if args.split:
+        split_size = 4 * 1024 * 1024 * 1024  # Enable 4GB splitting
+    else:
+        split_size = 0  # Disable splitting by default
+
     if not os.path.exists(output_directory):
         try:
             os.makedirs(output_directory)
@@ -133,6 +192,23 @@ def main():
                     log_message(f"Error decrypting {iso_file_name}: ps3dec exited with code {process.returncode}", log_file_path)
         except Exception as e:
             log_message(f"Exception occurred while decrypting {iso_file_name}: {e}", log_file_path)
+
+        # Split the decrypted file if it's larger than 4GB
+        if split_size and os.path.exists(decrypted_file_name):
+            file_size = os.path.getsize(decrypted_file_name)
+            if file_size > split_size:
+                log_message(f"File is {file_size / (1024*1024):.2f} MB, splitting into 4GB chunks...", log_file_path)
+                temp_path = decrypted_file_name + ".tmp"
+                os.rename(decrypted_file_name, temp_path)
+                parts = split_iso(temp_path, decrypted_file_name, open(log_file_path, 'a'))
+                if parts:
+                    # Remove the temporary file
+                    os.remove(temp_path)
+                    log_message(f"Split complete. Created {len(parts)} part files.", log_file_path)
+                else:
+                    # Restore if split failed
+                    os.rename(temp_path, decrypted_file_name)
+                    log_message(f"Split failed, keeping original file.", log_file_path)
 
         # Advance tqdm progress
         if tqdm_stdin:
